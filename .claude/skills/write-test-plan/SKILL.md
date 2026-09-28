@@ -10,7 +10,9 @@ effort: high
 # Write a doc-testing test plan
 
 A plan is a bot-facing script of the same flow the page documents. The tool runs it against the live
-Tiger Console and a real service, and every failing step means something on the page is wrong.
+Tiger Console and a real service, or, for a self-hosted page, against a throwaway EC2 box with
+TimescaleDB installed (see [Self-hosted pages](#self-hosted-pages)). Every failing step means
+something on the page is wrong.
 
 **Read `src/components/TestPlan.astro` before writing anything.** It is the authoritative verb set,
 and it is kept current; this skill is the method, not the grammar.
@@ -320,6 +322,57 @@ disabled until something changes. All three were found by running, not reading. 
    negative case fail before you trust the positive one. A harness that silently extracted no SQL
    once reported five passes, including the step that was supposed to fail.
 
+## Self-hosted pages
+
+The method above is the same; the substrate is not. A plan whose first step is `fork the self-hosted
+service` runs on a fresh Ubuntu 24.04 EC2 box, provisioned for that page and destroyed after it, with
+no browser anywhere. The box follows the Ubuntu install guide command for command: PostgreSQL 18 and
+whatever TimescaleDB package is latest on the day, so the target moves with each release. The
+`fork the service` line is the only opt-in; page frontmatter decides nothing. What changes for the
+author, all learned on the first three plans (2026-09-28):
+
+- **The extension is installed, not created.** The box has the package and nothing else, like a
+  reader who just finished the install page. `CREATE EXTENSION IF NOT EXISTS timescaledb;` is the
+  first SQL step of nearly every plan, and it has to come before any assertion on a `timescaledb.*`
+  setting: those settings do not exist in `pg_settings` until the extension is created in that
+  database. The telemetry plan asserted `timescaledb.telemetry_level` first and failed on every step.
+
+- **`run SQL:` and `expect rows:` run in the `postgres` database**, over the tunnel, as `postgres`.
+  Anything in another database goes through `run command:` with psql on the box:
+  `sudo -u postgres psql -d restored -c "SELECT timescaledb_pre_restore();"`. An assertion in
+  another database is a shell test whose exit code fails the step:
+  `test "$(sudo -u postgres psql -d restored -tAc "SELECT count(*) FROM conditions")" = 721`.
+
+- **Every `run command:` is its own shell, as root, in `/tmp`.** An `export` on one line is gone
+  on the next, so a page's `export SOURCE=…` gets no step and its `$SOURCE` is filled with a literal.
+  Client tools run as the database owner: `sudo -u postgres pg_dump …`. Relative filenames work and
+  persist between steps, so write the page's own `> schema.sql`, not an invented path. No allowlist:
+  `sed`, `tee`, `systemctl` all run. A bare `psql -d …` connect line on the page needs no step.
+
+- **The linter knows these wrappers.** It strips a leading `sudo -u user`, reads the SQL out of a
+  `psql -c "…"`, and treats `$VAR` on the page as a placeholder, so a plan that wraps the page's
+  command still counts as running it. Lint clean is the expectation, same as Console plans.
+
+- **Assert from the catalog, never the screen.** There is no screen. `pg_settings` for a
+  configuration change (`setting`, and `pending_restart` for restart-only parameters),
+  `timescaledb_information.*` for objects, a shell `test` for anything else.
+
+- **Every step runs.** The box is throwaway, so there is no destructive gate and no standing
+  service to protect. Undo between routes is still ordinary steps, for the same reason as on Cloud:
+  the second route must be provable on its own.
+
+- **No screenshots, no control check.** The report has verdicts and command output only, and the
+  "controls not named on the page" rule has nothing to grade. Read the psql echo in the report the
+  way you would read a screenshot: a `COPY 721` proves what an `ok` does not.
+
+- **A run costs about five minutes, most of it boot.** Lint first; there is no cheap local dry run,
+  because the SQL depends on the box's TimescaleDB. Two runs at once collide on one Terraform state
+  and one local port, so runs are sequential. A run that fails on every SQL step with no error text,
+  while its shell steps pass, is a stale tunnel holding the local port: `lsof -nP -iTCP:55432`.
+
+- **Install, uninstall and upgrade pages get no plan here.** They need a bare box, not one with
+  TimescaleDB already on it, and that is a separate flow not built yet.
+
 ## Routes not to script, and why
 
 Close every plan with a `Not scripted:` list naming each documented interaction the plan does not
@@ -394,8 +447,8 @@ The pattern, from the Azure Private Link plan and the openssl half of strict-SSL
   fields that screen promises, then `dismiss`. Nothing is claimed, created or typed.
 - Run every documented command that needs only the service, and let a non-zero exit be the
   assertion: `openssl … | grep "Google\|ZeroSSL"` fails when neither issuer signs the certificate.
-  `run command:` refuses programs off its allowlist (`psql`, `tiger`, `openssl`), so a new client is
-  a tool change first.
+  On the Console path `run command:` refuses programs off its allowlist (`psql`, `tiger`,
+  `openssl`), so a new client is a tool change first. On the self-hosted box any program runs.
 - Name the rest under `Not scripted:` with the heading and where the plan stopped: "from `Create a
   private endpoint in Azure` onward: needs an Azure subscription, a virtual network and a private
   DNS zone."
