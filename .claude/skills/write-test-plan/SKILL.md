@@ -136,8 +136,10 @@ off the page. Draft, run, fix.
    step executes); out of page order. The last three read the `Not scripted:` list, keyed on the
    heading text before the first colon. It also warns when a plan asserts nothing.
 
-   Wrap every statement in backticks: an angle bracket outside inline code fails the MDX build, and
-   bare SQL trips Vale's acronym rule. For the compiled `DO … RAISE` block behind an `expect`, or the
+   A page's first plan also needs `import TestPlan from "@components/TestPlan.astro";` among its
+   imports. Neither the linter nor the run builds the page, so a missing import surfaces only in the
+   Vercel build of the PR. Wrap every statement in backticks: an angle bracket outside inline code
+   fails the MDX build, and bare SQL trips Vale's acronym rule. For the compiled `DO … RAISE` block behind an `expect`, or the
    inputs a plan needs, ask `parsePlan` from `lib/plan.mjs`. A SQL-only plan costs nothing to verify
    before a fork:
    ```bash
