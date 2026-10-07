@@ -191,8 +191,7 @@ timescaledb-parallel-copy \
 user=<USERNAME> password=<PASSWORD> \
 port=<PORT> \
 dbname=<DATABASE> \
-sslmode=require
-" \
+sslmode=require" \
 --table <TABLE_NAME> \
 --file <FILE_NAME>.csv \
 --workers <NUM_WORKERS> \
@@ -388,26 +387,29 @@ accessed. Skipping them does not affect statistics on your data.
 16. run command: `test "$(wc -l < fill_measurements.csv | tr -d ' ')" = "$(sudo -u postgres psql -d postgres -tAc "SELECT count(*) FROM fill_measurements")"`
 17. run command: `sudo -u postgres psql -d postgres -c "\COPY (SELECT * FROM fill_measurements WHERE time > '2021-11-01' AND time < '2021-11-02') TO fill_measurements_2021_11_01.csv CSV"`
 18. run command: `test "$(wc -l < fill_measurements_2021_11_01.csv | tr -d ' ')" = 95`
-19. run command: `timescaledb-parallel-copy --connection "host=<HOST> user=postgres password=<PASSWORD> port=<PORT> dbname=target_db sslmode=require" --table fill_measurements --file fill_measurements.csv --workers 2 --reporting-period 30s`
-20. run command: `test "$(sudo -u postgres psql -d target_db -tAc "SELECT count(*) FROM fill_measurements")" = "$(sudo -u postgres psql -d postgres -tAc "SELECT count(*) FROM fill_measurements")"`
-21. run command: `sudo -u postgres psql -d target_db -c "TRUNCATE fill_measurements;"`
-22. run command: `sudo -u postgres psql -d target_db -c "\copy fill_measurements FROM 'fill_measurements.csv' WITH (FORMAT CSV);"`
+19. run command: `apt-get install -y golang-go`
+20. run command: `go install github.com/timescale/timescaledb-parallel-copy/cmd/timescaledb-parallel-copy@latest`
+21. run command: `"$(go env GOPATH)/bin/timescaledb-parallel-copy" -version`
+22. run command: `timescaledb-parallel-copy --connection "host=<HOST> user=postgres password=<PASSWORD> port=<PORT> dbname=target_db sslmode=require" --table fill_measurements --file fill_measurements.csv --workers 2 --reporting-period 30s`
 23. run command: `test "$(sudo -u postgres psql -d target_db -tAc "SELECT count(*) FROM fill_measurements")" = "$(sudo -u postgres psql -d postgres -tAc "SELECT count(*) FROM fill_measurements")"`
-24. run command: `sudo -u postgres pg_dump -U postgres -W -h /var/run/postgresql -p 5432 -Fc -v --section=post-data --exclude-schema="_timescaledb*" -f dump_post_data.dump postgres`
-25. run command: `sudo -u postgres pg_restore -U postgres -W -h /var/run/postgresql -p 5432 --no-owner -Fc -v -d target_db dump_post_data.dump 2> restore_post_data.log || true`
-26. run command: `test -z "$(grep 'pg_restore: error' restore_post_data.log | grep -v 'already exists')"`
-27. run command: `test "$(sudo -u postgres psql -d target_db -tAc "SELECT count(*) FROM pg_indexes WHERE tablename = 'fill_measurements' AND indexname = 'fill_measurements_sensor_idx'")" = 1`
-28. run SQL: `SELECT view_name, view_definition FROM timescaledb_information.continuous_aggregates;`
-29. expect rows: `SELECT 1 FROM timescaledb_information.continuous_aggregates WHERE view_name = 'avg_fill_levels'`
-30. run command: `sudo -u postgres psql -d target_db -c "CREATE MATERIALIZED VIEW avg_fill_levels WITH (timescaledb.continuous) AS SELECT round(avg(fill_level), 2) AS avg_fill_level, time_bucket('01:00:00'::interval, time) AS bucket, sensor_id FROM fill_measurements GROUP BY (time_bucket('01:00:00'::interval, time)), sensor_id;"`
-31. run command: `test "$(sudo -u postgres psql -d target_db -tAc "SELECT count(*) FROM timescaledb_information.continuous_aggregates WHERE view_name = 'avg_fill_levels'")" = 1`
-32. run SQL: `SELECT application_name, schedule_interval, retry_period, config, hypertable_name FROM timescaledb_information.jobs WHERE owner = 'postgres'::regrole;`
-33. expect rows: `SELECT 1 FROM timescaledb_information.jobs WHERE owner = 'postgres'::regrole AND proc_name = 'policy_retention' AND hypertable_name = 'fill_measurements'`
-34. run command: `sudo -u postgres psql -d target_db -c "SELECT add_retention_policy('fill_measurements', INTERVAL '10 years');"`
-35. run command: `test "$(sudo -u postgres psql -d target_db -tAc "SELECT count(*) FROM timescaledb_information.jobs WHERE proc_name = 'policy_retention' AND hypertable_name = 'fill_measurements'")" = 1`
-36. run command: `sudo -u postgres psql -d target_db -c "ANALYZE;"`
+24. run command: `sudo -u postgres psql -d target_db -c "TRUNCATE fill_measurements;"`
+25. run command: `sudo -u postgres psql -d target_db -c "\copy fill_measurements FROM 'fill_measurements.csv' WITH (FORMAT CSV);"`
+26. run command: `test "$(sudo -u postgres psql -d target_db -tAc "SELECT count(*) FROM fill_measurements")" = "$(sudo -u postgres psql -d postgres -tAc "SELECT count(*) FROM fill_measurements")"`
+27. run command: `sudo -u postgres pg_dump -U postgres -W -h /var/run/postgresql -p 5432 -Fc -v --section=post-data --exclude-schema="_timescaledb*" -f dump_post_data.dump postgres`
+28. run command: `sudo -u postgres pg_restore -U postgres -W -h /var/run/postgresql -p 5432 --no-owner -Fc -v -d target_db dump_post_data.dump 2> restore_post_data.log || true`
+29. run command: `test -z "$(grep 'pg_restore: error' restore_post_data.log | grep -v 'already exists')"`
+30. run command: `test "$(sudo -u postgres psql -d target_db -tAc "SELECT count(*) FROM pg_indexes WHERE tablename = 'fill_measurements' AND indexname = 'fill_measurements_sensor_idx'")" = 1`
+31. run SQL: `SELECT view_name, view_definition FROM timescaledb_information.continuous_aggregates;`
+32. expect rows: `SELECT 1 FROM timescaledb_information.continuous_aggregates WHERE view_name = 'avg_fill_levels'`
+33. run command: `sudo -u postgres psql -d target_db -c "CREATE MATERIALIZED VIEW avg_fill_levels WITH (timescaledb.continuous) AS SELECT round(avg(fill_level), 2) AS avg_fill_level, time_bucket('01:00:00'::interval, time) AS bucket, sensor_id FROM fill_measurements GROUP BY (time_bucket('01:00:00'::interval, time)), sensor_id;"`
+34. run command: `test "$(sudo -u postgres psql -d target_db -tAc "SELECT count(*) FROM timescaledb_information.continuous_aggregates WHERE view_name = 'avg_fill_levels'")" = 1`
+35. run SQL: `SELECT application_name, schedule_interval, retry_period, config, hypertable_name FROM timescaledb_information.jobs WHERE owner = 'postgres'::regrole;`
+36. expect rows: `SELECT 1 FROM timescaledb_information.jobs WHERE owner = 'postgres'::regrole AND proc_name = 'policy_retention' AND hypertable_name = 'fill_measurements'`
+37. run command: `sudo -u postgres psql -d target_db -c "SELECT add_retention_policy('fill_measurements', INTERVAL '10 years');"`
+38. run command: `test "$(sudo -u postgres psql -d target_db -tAc "SELECT count(*) FROM timescaledb_information.jobs WHERE proc_name = 'policy_retention' AND hypertable_name = 'fill_measurements'")" = 1`
+39. run command: `sudo -u postgres psql -d target_db -c "ANALYZE;"`
 
-Not scripted:
-- Restoring data with timescaledb-parallel-copy: the `Install timescaledb-parallel-copy` step only. `go get` needs a Go toolchain the target does not have; the target's `timescaledb-tools` package already provides the binary the import step runs.
+Step 19 is a fixture: the page assumes a Go toolchain. Step 21 proves the page's install put a working
+binary where Go puts binaries; step 22 runs the one already on the box's PATH.
 
 </TestPlan>
