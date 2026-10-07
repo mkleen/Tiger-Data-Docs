@@ -388,8 +388,8 @@ accessed. Skipping them does not affect statistics on your data.
 17. run command: `sudo -u postgres psql -d postgres -c "\COPY (SELECT * FROM fill_measurements WHERE time > '2021-11-01' AND time < '2021-11-02') TO fill_measurements_2021_11_01.csv CSV"`
 18. run command: `test "$(wc -l < fill_measurements_2021_11_01.csv | tr -d ' ')" = 95`
 19. run command: `apt-get install -y golang-go`
-20. run command: `go install github.com/timescale/timescaledb-parallel-copy/cmd/timescaledb-parallel-copy@latest`
-21. run command: `"$(go env GOPATH)/bin/timescaledb-parallel-copy" -version`
+20. run command: `HOME=/root go install github.com/timescale/timescaledb-parallel-copy/cmd/timescaledb-parallel-copy@latest`
+21. run command: `test -x /root/go/bin/timescaledb-parallel-copy && /root/go/bin/timescaledb-parallel-copy -version`
 22. run command: `timescaledb-parallel-copy --connection "host=<HOST> user=postgres password=<PASSWORD> port=<PORT> dbname=target_db sslmode=require" --table fill_measurements --file fill_measurements.csv --workers 2 --reporting-period 30s`
 23. run command: `test "$(sudo -u postgres psql -d target_db -tAc "SELECT count(*) FROM fill_measurements")" = "$(sudo -u postgres psql -d postgres -tAc "SELECT count(*) FROM fill_measurements")"`
 24. run command: `sudo -u postgres psql -d target_db -c "TRUNCATE fill_measurements;"`
@@ -409,7 +409,8 @@ accessed. Skipping them does not affect statistics on your data.
 38. run command: `test "$(sudo -u postgres psql -d target_db -tAc "SELECT count(*) FROM timescaledb_information.jobs WHERE proc_name = 'policy_retention' AND hypertable_name = 'fill_measurements'")" = 1`
 39. run command: `sudo -u postgres psql -d target_db -c "ANALYZE;"`
 
-Step 19 is a fixture: the page assumes a Go toolchain. Step 21 proves the page's install put a working
-binary where Go puts binaries; step 22 runs the one already on the box's PATH.
+Step 19 is a fixture: the page assumes a Go toolchain, and `HOME=` in step 20 is the shell a reader has
+and a remote command does not (Go derives its paths from it). Step 21 proves the page's install put a
+working binary under `~/go/bin`; step 22 runs the one already on the box's PATH.
 
 </TestPlan>

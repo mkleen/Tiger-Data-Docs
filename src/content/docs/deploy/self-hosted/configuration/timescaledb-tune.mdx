@@ -72,8 +72,8 @@ timescaledb-tune --quiet --yes --dry-run >> <PATH_TO_POSTGRESQL_CONF>
 
 1. fork the self-hosted service
 2. run command: `apt-get install -y golang-go`
-3. run command: `go install github.com/timescale/timescaledb-tune/cmd/timescaledb-tune@latest`
-4. run command: `"$(go env GOPATH)/bin/timescaledb-tune" --version`
+3. run command: `HOME=/root go install github.com/timescale/timescaledb-tune/cmd/timescaledb-tune@latest`
+4. run command: `test -x /root/go/bin/timescaledb-tune && /root/go/bin/timescaledb-tune --version`
 5. run command: `sed -i 's/^shared_buffers = .*/shared_buffers = 128MB/' "$(sudo -u postgres psql -d postgres -tAc 'SHOW config_file;')"`
 6. run command: `yes | timescaledb-tune`
 7. run command: `test "$(grep -c '^shared_buffers = 128MB' "$(sudo -u postgres psql -d postgres -tAc 'SHOW config_file;')")" = 0`
@@ -84,7 +84,8 @@ timescaledb-tune --quiet --yes --dry-run >> <PATH_TO_POSTGRESQL_CONF>
 12. run command: `systemctl is-active postgresql`
 13. expect rows: `SELECT 1 FROM pg_settings WHERE name = 'shared_buffers' AND setting::bigint > 16384`
 
-Step 2 is a fixture: the page assumes a Go toolchain. Step 6 is the interactive run with every
+Step 2 is a fixture: the page assumes a Go toolchain, and `HOME=` in step 3 is the shell a reader has
+and a remote command does not. Step 6 is the interactive run with every
 prompt answered yes; step 7 shows it rewrote `shared_buffers` in place. Step 8 resets the file so
 the append in step 10 is tested from the same starting point.
 
