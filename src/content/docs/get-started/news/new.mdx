@@ -142,7 +142,7 @@ The Iceberg destination connector now supports tiered data controls, Changelog m
 
 - **Tiered data**: choose whether to include tiered data when configuring a table's sync in Tiger Console. New syncs include tiered data by default, with an option to exclude it. Existing sync settings remain unchanged.
 - **Changelog mode**: write inserts, updates, and deletes as change records for consumption by engines such as Snowflake and Databricks that cannot read Iceberg equality deletes.
-- **Connector observability**: monitor connector status, throughput, replication lag, record counts, data read, and retained write-ahead log (WAL) in Tiger Console. View per-table sync status, initial-copy progress, errors, and configured sync options.
+- **Connector observability**: monitor connector status, throughput, replication lag, record counts, data read, and retained write-ahead log in Tiger Console. View per-table sync status, initial-copy progress, errors, and configured sync options.
 - **Schema changes**: add nullable columns without defaults to synced tables and propagate them to Iceberg.
 - **Connection management**: update destination authentication settings and rename connectors directly in Tiger Console.
 - **Maintenance windows**: connector updates that require a restart now respect your service's configured maintenance window.
