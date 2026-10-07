@@ -930,10 +930,25 @@ Using `CASCADE` will drop all objects that depend on the {C.TOOLKIT_SHORT} exten
 14. run command: `sudo apt remove timescaledb-toolkit-postgresql-18`
 15. run command: `sudo apt autoremove`
 16. expect no rows: `SELECT 1 FROM pg_available_extensions WHERE name = 'timescaledb_toolkit'`
+17. run command: `apt-get install -y docker.io`
+18. run command: `docker run -d --name timescaledb -p 5433:5432 -e POSTGRES_PASSWORD=<PASSWORD> timescale/timescaledb-ha:pg18`
+19. run command: `for i in $(seq 1 90); do docker exec timescaledb pg_isready -U postgres && break; sleep 2; done; docker exec timescaledb pg_isready -U postgres`
+20. run command: `test "$(docker exec timescaledb psql -U postgres -tAc "SELECT count(*) FROM pg_extension WHERE extname = 'timescaledb_toolkit'")" = 1`
+21. run command: `docker pull timescale/timescaledb-ha:pg18`
+22. run command: `docker exec -i timescaledb psql -U postgres -d postgres -c "DROP EXTENSION IF EXISTS timescaledb_toolkit CASCADE;"`
+23. run command: `test "$(docker exec timescaledb psql -U postgres -tAc "SELECT count(*) FROM pg_extension WHERE extname = 'timescaledb_toolkit'")" = 0`
+
+Steps 1 to 16 are the Ubuntu tab. Steps 17 to 23 are the Docker tab on the same box: the HA image is
+started on port 5433, step 20 checks the Toolkit is already enabled as the page says, step 21 is the
+update, and steps 22 and 23 are the uninstall from one database.
 
 Not scripted:
-- Install TimescaleDB Toolkit: the Docker, Kubernetes, Debian, Red Hat, Fedora, RockyLinux, macOS and Source tabs; the target is Ubuntu, and the linter keys on headings, so the Ubuntu tab's statements above are the ones it can check.
-- Update TimescaleDB Toolkit: the same tabs.
-- Uninstall TimescaleDB Toolkit: the same tabs.
+- Debian tab: the target is Ubuntu; Debian, Red Hat, Fedora and Rocky Linux each need their own image.
+- Red Hat tab: the same.
+- Fedora tab: the same.
+- RockyLinux tab: the same.
+- Kubernetes tab: needs a cluster.
+- macOS tab: needs a Mac.
+- Source tab: builds the extension with a Rust toolchain, which is not what a small box is for.
 
 </TestPlan>
