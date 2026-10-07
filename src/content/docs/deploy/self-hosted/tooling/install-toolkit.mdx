@@ -932,7 +932,7 @@ Using `CASCADE` will drop all objects that depend on the {C.TOOLKIT_SHORT} exten
 16. expect no rows: `SELECT 1 FROM pg_available_extensions WHERE name = 'timescaledb_toolkit'`
 17. run command: `apt-get install -y docker.io`
 18. run command: `docker run -d --name timescaledb -p 5433:5432 -e POSTGRES_PASSWORD=<PASSWORD> timescale/timescaledb-ha:pg18`
-19. run command: `for i in $(seq 1 90); do docker exec timescaledb pg_isready -U postgres && break; sleep 2; done`
+19. run command: `for i in $(seq 1 90); do docker exec timescaledb pg_isready -U postgres && break; sleep 2; done; docker exec timescaledb pg_isready -U postgres`
 20. run command: `test "$(docker exec timescaledb psql -U postgres -tAc "SELECT count(*) FROM pg_extension WHERE extname = 'timescaledb_toolkit'")" = 1`
 21. run command: `docker pull timescale/timescaledb-ha:pg18`
 22. run command: `docker exec -i timescaledb psql -U postgres -d postgres -c "DROP EXTENSION IF EXISTS timescaledb_toolkit CASCADE;"`

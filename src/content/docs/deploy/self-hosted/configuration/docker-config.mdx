@@ -60,15 +60,15 @@ docker run -i -t timescale/timescaledb:latest-pg18 postgres -c max_wal_size=2GB
 2. run command: `apt-get install -y docker.io`
 3. run command: `docker run -d --name timescaledb -p 5433:5432 -e POSTGRES_PASSWORD=<PASSWORD> timescale/timescaledb:latest-pg18`
 4. run command: `docker start timescaledb`
-5. run command: `for i in $(seq 1 30); do docker exec timescaledb pg_isready -U postgres && break; sleep 2; done`
+5. run command: `for i in $(seq 1 30); do docker exec timescaledb pg_isready -U postgres && break; sleep 2; done; docker exec timescaledb pg_isready -U postgres`
 6. run command: `docker exec timescaledb sh -c 'echo PGDATA=$PGDATA; ls -l $PGDATA/postgresql.conf'`
 7. run command: `docker exec timescaledb sh -c 'sed -i "s/^#*max_wal_size = .*/max_wal_size = 2GB/" $PGDATA/postgresql.conf'`
 8. run command: `docker exec timescaledb sh -c 'grep -c "^max_wal_size = 2GB" $PGDATA/postgresql.conf'`
 9. run command: `docker restart timescaledb`
-10. run command: `for i in $(seq 1 30); do docker exec timescaledb pg_isready -U postgres && break; sleep 2; done`
+10. run command: `for i in $(seq 1 30); do docker exec timescaledb pg_isready -U postgres && break; sleep 2; done; docker exec timescaledb pg_isready -U postgres`
 11. run command: `test "$(docker exec timescaledb psql -U postgres -tAc 'SHOW max_wal_size')" = 2GB`
 12. run command: `docker run -d --name timescaledb_flag -e POSTGRES_PASSWORD=<PASSWORD> timescale/timescaledb:latest-pg18 postgres -c max_wal_size=2GB`
-13. run command: `for i in $(seq 1 30); do docker exec timescaledb_flag pg_isready -U postgres && break; sleep 2; done`
+13. run command: `for i in $(seq 1 30); do docker exec timescaledb_flag pg_isready -U postgres && break; sleep 2; done; docker exec timescaledb_flag pg_isready -U postgres`
 14. run command: `test "$(docker exec timescaledb_flag psql -U postgres -tAc 'SHOW max_wal_size')" = 2GB`
 
 Not scripted:

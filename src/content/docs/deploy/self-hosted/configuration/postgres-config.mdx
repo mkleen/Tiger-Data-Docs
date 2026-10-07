@@ -89,8 +89,8 @@ postgres -c log_connections=yes -c log_destination='syslog'
 6. expect rows: `SELECT 1 FROM pg_settings WHERE name = 'log_connections' AND setting = 'on'`
 7. run command: `pg_createcluster 18 prompt -p 5434`
 8. run command: `sudo -u postgres PGDATA=/etc/postgresql/18/prompt nohup /usr/lib/postgresql/18/bin/postgres -c log_connections=yes -c log_destination='syslog' > /tmp/prompt.log 2>&1 &`
-9. run command: `for i in $(seq 1 30); do sudo -u postgres pg_isready -p 5434 && break; sleep 1; done`
-10. run command: `test "$(sudo -u postgres psql -p 5434 -d postgres -tAc 'SHOW log_connections')" = on`
+9. run command: `for i in $(seq 1 30); do sudo -u postgres pg_isready -p 5434 && break; sleep 1; done; sudo -u postgres pg_isready -p 5434`
+10. run command: `test "$(sudo -u postgres psql -p 5434 -d postgres -tAc 'SHOW log_connections')" = yes`
 11. run command: `test "$(sudo -u postgres psql -p 5434 -d postgres -tAc 'SHOW log_destination')" = syslog`
 12. run command: `pg_ctlcluster 18 prompt stop`
 
