@@ -127,7 +127,7 @@ off the page. Draft, run, fix.
 
 8. **Lint, verify the SQL, then run.**
    ```bash
-   cd ../doc-testing-tool-poc
+   cd ../doc-testing-tool
    node scripts/lint-plan.mjs "<page url>"
    ```
    Six checks, none needing a browser or a service: grammar (a line matching no verb); controls not
