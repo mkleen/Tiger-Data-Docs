@@ -213,6 +213,12 @@ It is unnumbered prose, so nothing executes it. The linter reads it: each entry'
 first colon must match a heading on the page, and a procedure or statement under that heading is
 excused from the coverage checks. When everything on a page is driven, the list goes away.
 
+A page with per-platform `<Tabs>` repeats its headings once per tab, so a heading key would excuse
+every tab, the one the plan drives included. Key those entries by tab instead: `Debian tab: the
+target is Ubuntu.` excuses exactly the `Debian` tab's procedures and statements, the label matched
+whole, and an outer tab's key (`Linux tab`) covers the tabs nested in it. Drive the tab the target
+can run and name the others, one line each.
+
 **Only things a reader is told to do belong on it**: the page's `NumberedList` procedures and the
 statements or commands it tells the reader to run. A navigation sentence gets one click and one
 `expect url`. Prose describing a screen's controls gets nothing unless a procedure tells the reader
