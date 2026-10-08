@@ -55,8 +55,9 @@ docker run -i -t timescale/timescaledb:latest-pg18 postgres -c max_wal_size=2GB
 ```
 
 <TestPlan>
+target: self-hosted
 
-1. fork the self-hosted service
+1. fork the service
 2. run command: `apt-get install -y docker.io`
 3. run command: `docker run -d --name timescaledb -p 5433:5432 -e POSTGRES_PASSWORD=<PASSWORD> timescale/timescaledb:latest-pg18`
 4. run command: `docker start timescaledb`

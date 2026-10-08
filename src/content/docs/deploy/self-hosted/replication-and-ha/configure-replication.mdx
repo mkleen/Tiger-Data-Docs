@@ -428,8 +428,9 @@ configurable high availability solution with automatic failover functionality,
 check out [Patroni](https://github.com/zalando/patroni).
 
 <TestPlan>
+target: self-hosted
 
-1. fork the self-hosted service
+1. fork the service
 2. run SQL: `CREATE EXTENSION IF NOT EXISTS timescaledb;`
 3. run SQL: `CREATE TABLE sensor_readings (time timestamptz NOT NULL, sensor_id int NOT NULL, reading double precision) WITH (tsdb.hypertable, tsdb.partition_column = 'time');`
 4. run SQL: `INSERT INTO sensor_readings SELECT t, (i % 3)::int, random() FROM generate_series(now() - INTERVAL '2 days', now(), INTERVAL '1 hour') WITH ORDINALITY AS g(t, i);`

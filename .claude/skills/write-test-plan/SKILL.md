@@ -11,8 +11,9 @@ effort: high
 
 A plan is a bot-facing script of the flow the page documents. The tool runs it against the live
 Tiger Console and a real service, or, for a self-hosted page, against a throwaway EC2 box with
-TimescaleDB installed (see [Self-hosted pages](#self-hosted-pages)). A failing step means something
-on the page is wrong.
+TimescaleDB installed (see [Self-hosted pages](#self-hosted-pages)), or both when the page is tagged
+with both products (see [Pages tagged with both products](#pages-tagged-with-both-products)). A
+failing step means something on the page is wrong.
 
 **Read `src/components/TestPlan.astro` before writing anything.** It is the authoritative verb set
 and is kept current. This skill is the method, not the grammar.
@@ -41,16 +42,23 @@ off the page. Draft, run, fix.
    a run: transferring project ownership, leaving a project, enforcing MFA or SSO. Nothing on the
    page marks them, so ask, and record the answer in the closing `Not scripted:` list.
 
-3. **Decide isolation.** If any step creates, deletes or alters anything at service level, step 1 is
+3. **Declare the products.** The page's `products:` frontmatter is the claim; the plan's `target:`
+   line, before step 1, is what the plan proves. `target: self-hosted` for a self-hosted page,
+   nothing for a Cloud-only page, `target: cloud, self-hosted` when the page is tagged with both and
+   the steps are mostly shared. A plan claiming a product the page is not tagged with does not run;
+   a tagged product no plan covers is reported as not covered, which is honest and fine for a first
+   plan.
+
+4. **Decide isolation.** If any step creates, deletes or alters anything at service level, step 1 is
    `fork the service`. Without it the run uses the standing service and refuses every destructive
    step. Project-level work needs no fork: the destructive gate allows a `create` click on a
    non-service page and a row action pinned to a value the run owns. What a plan creates at project
    level it removes itself, pinned to its own name, because a fork cannot isolate it.
 
-4. **Fetch what the page tells the reader to download.** `download <url>` as a step. Archives are
+5. **Fetch what the page tells the reader to download.** `download <url>` as a step. Archives are
    unzipped, the folder becomes psql's working directory and the source for `upload`.
 
-5. **Look at the screen before you transcribe it.** Open the Console on the standing service and
+6. **Look at the screen before you transcribe it.** Open the Console on the standing service and
    walk to each screen the page names, pressing nothing that changes state, and read the controls'
    real labels and kinds. The docs' screenshots under `src/assets/images` are a first look; the live
    screen is authoritative. Then transcribe each route into verbs, in the page's order, with the
@@ -78,7 +86,7 @@ off the page. Draft, run, fix.
    - **An icon the page names only by its picture** is `[resolve: <hint>]`. Use it only when there
      is no label to name.
 
-6. **Add assertions.** `run SQL:` fails only when a statement errors, so a plan can walk an entire
+7. **Add assertions.** `run SQL:` fails only when a statement errors, so a plan can walk an entire
    ingest route, load nothing, and pass. The mechanical pairs:
 
    | the step created | assert |
@@ -114,7 +122,7 @@ off the page. Draft, run, fix.
    outcome, the smallest honest end is that the confirmation dialog closed: `expect no label \`Apply
    changes?\``.
 
-7. **Never write a credential, address, CIDR, or service or project id.** `type $INVITE_EMAIL into
+8. **Never write a credential, address, CIDR, or service or project id.** `type $INVITE_EMAIL into
    \`Email\`` reads `DOCTEST_INPUT_INVITE_EMAIL`; `select the service` means whichever service the run
    is about. `$NAME` is the only form that resolves: an `<ANGLE>` placeholder copied into `run SQL:`
    reaches the database literally and fails like a docs bug. Only `run command:` fills angle
@@ -125,7 +133,7 @@ off the page. Draft, run, fix.
    against the page's sample output, before filling it the way you know is right. A plan may name a
    value the page leaves open; it may not quietly correct an instruction the page gets wrong.
 
-8. **Lint, verify the SQL, then run.**
+9. **Lint, verify the SQL, then run.**
    ```bash
    cd ../doc-testing-tool
    node scripts/lint-plan.mjs "<page url>"
@@ -151,7 +159,7 @@ off the page. Draft, run, fix.
    Then `node scripts/test-page.mjs "<page url>"`. Exit 3 before the browser opens means another run
    holds the project; wait for it.
 
-9. **Fix what the run reports.** A fix lands in the docs, the plan, or the tool, and the failure does
+10. **Fix what the run reports.** A fix lands in the docs, the plan, or the tool, and the failure does
    not say which.
    - Read the screenshots on a pass as much as on a failure. Hash them first: identical shots across
      consecutive passing steps mean the steps did nothing.
@@ -164,11 +172,32 @@ off the page. Draft, run, fix.
 
 ## Self-hosted pages
 
-The method is the same; the substrate is not. A plan whose first step is `fork the self-hosted
-service` runs on a fresh Ubuntu EC2 box, provisioned for that page and destroyed after it, with no
-browser. The box follows the Ubuntu install guide command for command, on whatever TimescaleDB
-package is latest that day, so the target moves with each release. The `fork` line is the only
-opt-in; frontmatter decides nothing.
+The method is the same; the substrate is not. A plan with `target: self-hosted` before step 1 runs
+on a fresh Ubuntu EC2 box, provisioned for that page and destroyed after it, with no browser. The box
+follows the Ubuntu install guide command for command, on whatever TimescaleDB package is latest that
+day, so the target moves with each release. The `target:` line is the only opt-in; frontmatter
+decides nothing. `fork the service` is allowed and means nothing extra here: the box is throwaway
+by itself.
+
+## Pages tagged with both products
+
+Most of the site is tagged `[cloud, self_hosted]`, and most of those pages are SQL only. One plan
+covers both: `target: cloud, self-hosted`, then the SQL steps and `expect` assertions unprefixed,
+because psql means the same thing on both sides. The tool walks Cloud first, then the box, and
+reports one verdict per product.
+
+- **A step for one side only carries a prefix:** `[cloud] click \`SQL editor\``,
+  `[self-hosted] run command: \`sudo -u postgres psql -c "..."\``. Console verbs and `run command`
+  must be prefixed in a two-product plan, because `run command` runs on your machine for Cloud and
+  on the box as root for self-hosted; the linter refuses an unprefixed one.
+- **The extension step differs by side.** `[self-hosted] run SQL: \`CREATE EXTENSION IF NOT EXISTS
+  timescaledb;\`` on the box; a Cloud service has it already.
+- **Two blocks when the procedures diverge.** A Console wizard on one side and `postgresql.conf` on
+  the other, or a page that imports a partial whose plan is Console-only: write a second `<TestPlan>`
+  with `target: self-hosted` under it. Every block then needs its own `target:`, and no two blocks
+  may claim the same product. More than a third of the steps prefixed is the sign to split.
+- **Fixtures run on both sides.** A `CREATE TABLE` the plan owns is a shared step, so one copy
+  serves both walks; drop it on both, too.
 
 - **The extension is installed, not created.** `CREATE EXTENSION IF NOT EXISTS timescaledb;` is the
   first SQL step of nearly every plan, and it must precede any assertion on a `timescaledb.*`

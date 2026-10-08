@@ -913,8 +913,9 @@ Using `CASCADE` will drop all objects that depend on the {C.TOOLKIT_SHORT} exten
 </Tabs>
 
 <TestPlan>
+target: self-hosted
 
-1. fork the self-hosted service
+1. fork the service
 2. run command: `echo 'APT::Get::Assume-Yes "true";' > /etc/apt/apt.conf.d/90doctest`
 3. run SQL: `CREATE EXTENSION IF NOT EXISTS timescaledb;`
 4. run command: `sudo apt update`
