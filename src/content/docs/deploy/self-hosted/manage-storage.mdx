@@ -144,8 +144,9 @@ In {C.TIMESCALE_DB} v2.0 and later, you can use `move_chunk` with the job schedu
 framework. For more information, see the [jobs section](/reference/timescaledb/jobs-automation).
 
 <TestPlan>
+target: self-hosted
 
-1. fork the self-hosted service
+1. fork the service
 2. run SQL: `CREATE EXTENSION IF NOT EXISTS timescaledb;`
 3. run SQL: `CREATE TABLE conditions (time timestamptz NOT NULL, device text, temperature double precision) WITH (tsdb.hypertable, tsdb.partition_column = 'time');`
 4. run SQL: `INSERT INTO conditions SELECT t, 'dev-' || (i % 5), 20 + random() * 10 FROM generate_series(now() - INTERVAL '34 days', now(), INTERVAL '1 hour') WITH ORDINALITY AS g(t, i);`

@@ -69,8 +69,9 @@ timescaledb-tune --quiet --yes --dry-run >> <PATH_TO_POSTGRESQL_CONF>
 ```
 
 <TestPlan>
+target: self-hosted
 
-1. fork the self-hosted service
+1. fork the service
 2. run command: `apt-get install -y golang-go`
 3. run command: `HOME=/root go install github.com/timescale/timescaledb-tune/cmd/timescaledb-tune@latest`
 4. run command: `test -x /root/go/bin/timescaledb-tune && /root/go/bin/timescaledb-tune --version`

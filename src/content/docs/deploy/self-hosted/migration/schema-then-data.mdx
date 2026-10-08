@@ -368,8 +368,9 @@ The skipped tables and indexes correspond to system catalogs that can't be
 accessed. Skipping them does not affect statistics on your data.
 
 <TestPlan>
+target: self-hosted
 
-1. fork the self-hosted service
+1. fork the service
 2. run SQL: `CREATE EXTENSION IF NOT EXISTS timescaledb;`
 3. run SQL: `CREATE TABLE fill_measurements (time timestamptz NOT NULL, sensor_id int NOT NULL, fill_level numeric NOT NULL) WITH (tsdb.hypertable, tsdb.partition_column = 'time');`
 4. run SQL: `CREATE INDEX fill_measurements_sensor_idx ON fill_measurements (sensor_id, time DESC);`
